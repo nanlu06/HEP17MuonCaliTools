@@ -1,0 +1,7 @@
+scram p  CMSSW_9_3_0_pre4
+cd CMSSW_9_3_0_pre4/src
+cmsenv
+#scramv1 runtime -sh
+git cms-init
+git cms-addpkg Calibration/HcalCalibAlgos
+scram b clean; scram b -j9
