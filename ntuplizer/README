@@ -5,3 +5,10 @@ cmsenv
 git cms-init
 git cms-addpkg Calibration/HcalCalibAlgos
 scram b clean; scram b -j9
+
+
+(1) copy HEP17MuonAnalyzer.cc to Calibration/HcalCalibAlgos/plugins
+(2) copy HEP17_cfg.py to Calibration/HcalCalibAlgos/test
+(3) scram b
+(4) to Run, inside Calibration/HcalCalibAlgos/test:  
+cmsRun HEP17_cfg.py
