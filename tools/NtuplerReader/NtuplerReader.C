@@ -11,7 +11,7 @@ using namespace std;
 void NtuplerReader::Loop()
 {
 
-   TFile* outputFile=TFile::Open("/eos/cms/store/group/dpg_hcal/comm_hcal/nlu/ntuples/tree_data3_v5BCD_Cert_294927-302654_phi_pathlength.root","recreate");
+   TFile* outputFile=TFile::Open("/eos/cms/store/group/dpg_hcal/comm_hcal/nlu/ntuples/tree_data3_v5BCD_Cert_294927-302654_phi_pathlength_trkmatch.root","recreate");
 
    TTree *tree = new TTree("tree","tree");
 
@@ -24,16 +24,17 @@ void NtuplerReader::Loop()
    double activeL6[4]={1.5657558,1.5505628,1.5367661,1.5243816};
    double activeL7[4]={1,1,1,1};
    double e1r, e12r, e123r, e23r, e1s, e15, e2r, e2s, e25, e3r, e3s, e35, e4r, e4s, e45, e5r, e5s, e55, e6r, e6s, e65, e7r, e7s, e75;
-   int run, event, n_vtx, isMedium, isLoose, HCal_cellHot, HCal_ieta, HCal_iphi;
-   int isZmumu;
-   double Mmumu;
+   int run, event, n_vtx, isMedium, isLoose, Trkmatch, HCal_ieta, HCal_iphi;
+   //int isZmumu;
+   //double Mmumu;
    tree->Branch("run", &run, "run/I");
    tree->Branch("nvtx", &n_vtx, "nvtx/I");
    tree->Branch("event", &event, "event/I");
-   tree->Branch("isZmumu", &isZmumu, "isZmumu/I");
-   tree->Branch("Mmumu", &Mmumu, "Mmumu/D"); 
+   //tree->Branch("isZmumu", &isZmumu, "isZmumu/I");
+   //tree->Branch("Mmumu", &Mmumu, "Mmumu/D"); 
    tree->Branch("weight", &weight, "weight/D");  
-   tree->Branch("HCal_cellHot", &HCal_cellHot, "HCal_cellHot/I");
+   //tree->Branch("HCal_cellHot", &HCal_cellHot, "HCal_cellHot/I");
+   tree->Branch("Trkmatch", &Trkmatch, "Trkmatch/I"); //front and back proprogated track is matched.
    tree->Branch("ecal1x1", &ecal1x1, "ecal1x1/D");
    tree->Branch("ecal3x3", &ecal3x3, "ecal3x3/D");
    tree->Branch("ecal5x5", &ecal5x5, "ecal5x5/D");
@@ -155,18 +156,18 @@ void NtuplerReader::Loop()
 
            isMedium = ismediummuon->at(k);
            if(!isMedium) continue;
-           HCal_cellHot = hcal_cellHot->at(k);
-           if(!HCal_cellHot) continue;
+           if(!(hcal_cellHot->at(k))) continue;
 
            run = Run_No;
            event = Event_No;
            n_vtx = nvtx;
            weight = 1.0;
-           Mmumu = dimuon_M_tmp;
+           Trkmatch = fabs(matchedId->at(k)-1.0)<0.0001? 1:0;
+           //Mmumu = dimuon_M_tmp;
            ISOR04 = IsolationR04->at(k);
            TrkISOR03 = TrkIsolationR03->at(k);
-           if((k==mi) || (k==mj)) isZmumu = 1;
-           else isZmumu = 0;
+           //if((k==mi) || (k==mj)) isZmumu = 1;
+           //else isZmumu = 0;
            pt = pt_of_muon->at(k); 
            phi = phi_of_muon->at(k); 
            eta = eta_of_muon->at(k);
