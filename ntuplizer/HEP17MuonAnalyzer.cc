@@ -104,7 +104,7 @@ private:
   std::vector<double>       globalMuonHits_,matchedStat_,globalTrckPt_;
   std::vector<double>       globalTrckEta_,globalTrckPhi_,trackerLayer_;
   std::vector<double>       innerTrackpt_,innerTracketa_,innerTrackphi_;
-  std::vector<double>       matchedId_,numPixelLayers_;
+  std::vector<int>          matchedId_,numPixelLayers_;
   std::vector<double>       chiTracker_,dxyTracker_,dzTracker_;
   std::vector<double>       outerTrackPt_,outerTrackEta_,outerTrackPhi_;
   std::vector<double>       outerTrackChi_,outerTrackHits_,outerTrackRHits_;
@@ -112,7 +112,7 @@ private:
   std::vector<bool>         innerTrack_, outerTrack_, globalTrack_;
   std::vector<double>       isolationR04_,isolationR03_, TrkisolationR03_;
   std::vector<double>       energyMuon_,hcalEnergy_,ecalEnergy_;//hoEnergy_;
-  std::vector<double>       ecal1x1Energy_,ecal3x3Energy_,ecal5x5Energy_,hcal1x1Energy_, pMuon_;
+  std::vector<double>       ecal1x1Energy_,ecal3x3Energy_,ecal5x5Energy_,ecal15x15Energy_,ecal25x25Energy_,hcal1x1Energy_, pMuon_;
   std::vector<int>          hcalHot_;
   std::vector<unsigned int> ecalDetId_,hcalDetId_,ehcalDetId_;
   std::vector<double>       hcalDepth1Energy_, hcalDepth1Energy1_, hcalDepth1Energy2_, hcalDepth1Energy3_, hcalDepth1Energy4_, hcalDepth1Energy5_, hcalDepth1Energy6_, hcalDepth1Energy7_, hcalDepth1Energy8_, hcalDepth1ActiveLength_;
@@ -330,12 +330,12 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
       //std::cout << "before loop into muons"<<std::endl;
     for (reco::MuonCollection::const_iterator RecMuon = _Muon->begin(); RecMuon!= _Muon->end(); ++RecMuon)  {
       
-      double eEcal(-10000.0), eEcal3x3(-10000.0), eEcal5x5(-10000.0), eHcal(-10000.0), activeLengthTot(0), activeLengthHotTot(0);
+      double eEcal(-10000.0), eEcal3x3(-10000.0), eEcal5x5(-10000.0), eEcal15x15(-10000.0), eEcal25x25(-10000.0),eHcal(-10000.0), activeLengthTot(0), activeLengthHotTot(0);
       int ieta(-1000), iphi(-1000), ietahot(-1000), iphihot(-1000);
       double eHcalDepth[MaxDepth], eHcalDepth1[MaxDepth], eHcalDepth2[MaxDepth], eHcalDepth3[MaxDepth], eHcalDepth4[MaxDepth], eHcalDepth5[MaxDepth], eHcalDepth6[MaxDepth], eHcalDepth7[MaxDepth], eHcalDepth8[MaxDepth],eHcalDepthHot[MaxDepth];
       double activeL[MaxDepth], activeHotL[MaxDepth];
       int isHot(0);
-      bool         tmpmatch(false);
+      int tmpmatch(0);
 
       for (int i=0; i<MaxDepth; ++i){
         eHcalDepth[i] = eHcalDepthHot[i] = activeL[i] = activeHotL[i] = eHcalDepth1[i] = eHcalDepth2[i] = eHcalDepth3[i] = eHcalDepth4[i] = eHcalDepth5[i] = eHcalDepth6[i] = eHcalDepth7[i] = eHcalDepth8[i] = -10000.0;
@@ -359,15 +359,15 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 	  const DetId closestCell(trackID.detIdHCAL);
 	  HcalDetId hcidt(closestCell.rawId());  
 	  if ((hcidt.ieta() == check.ieta()) && (hcidt.iphi() == check.iphi()))
-	    tmpmatch= true;
+	    tmpmatch= 1;
 
 	  HcalSubdetector subdet = HcalDetId(closestCell).subdet();
 	  ieta   = HcalDetId(closestCell).ieta();
 	  iphi   = HcalDetId(closestCell).iphi();
 	  bool            hborhe = (std::abs(ieta) == 16);
 
-          //if (ieta< 30 && ieta>15 && iphi>62 && iphi<67){
-          if (ieta< 28 && ieta>19 && iphi>62 && iphi<67){
+          if (ieta< 30 && ieta>15 && iphi>62 && iphi<67){
+          //if (ieta< 28 && ieta>19 && iphi>62 && iphi<67){
               accept = true;
       // this part is moved from before to here to save time
       muon_is_good_.push_back(RecMuon->isPFMuon());
@@ -384,6 +384,7 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 #endif
       isloosemuon_.push_back(muon::isLooseMuon(*RecMuon));
       ismediummuon_.push_back(muon::isMediumMuon(*RecMuon));
+
       if (RecMuon->track().isNonnull()) {
         trackerLayer_.push_back(RecMuon->track()->hitPattern().trackerLayersWithMeasurement());
       } else {
@@ -471,6 +472,10 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
             eEcal3x3 = e3x3.first;
             std::pair<double,bool> e5x5 = spr::eECALmatrix(isoCell,barrelRecHitsHandle,endcapRecHitsHandle,*theEcalChStatus,geo,caloTopology,sevlv.product(),2,2,-100.0,-100.0,-500.0,500.0,false);
             eEcal5x5 = e5x5.first;
+            std::pair<double,bool> e15x15 = spr::eECALmatrix(isoCell,barrelRecHitsHandle,endcapRecHitsHandle,*theEcalChStatus,geo,caloTopology,sevlv.product(),7,7,-100.0,-100.0,-500.0,500.0,false);
+            eEcal15x15 = e15x15.first;
+            std::pair<double,bool> e25x25 = spr::eECALmatrix(isoCell,barrelRecHitsHandle,endcapRecHitsHandle,*theEcalChStatus,geo,caloTopology,sevlv.product(),12,12,-100.0,-100.0,-500.0,500.0,false);
+            eEcal25x25 = e25x25.first;
             okE   = e3x3.second;
           }
 #ifdef EDM_ML_DEBUG
@@ -554,6 +559,8 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 	  isHot = matchId(closestCell,hotCell);
 
       matchedId_.push_back(tmpmatch);
+      ecal25x25Energy_.push_back(eEcal25x25);
+      ecal15x15Energy_.push_back(eEcal15x15);
       ecal5x5Energy_.push_back(eEcal5x5);
       ecal3x3Energy_.push_back(eEcal3x3);
       ecal1x1Energy_.push_back(eEcal);
@@ -841,6 +848,8 @@ void HEP17MuonAnalyzer::beginJob() {
   tree_->Branch("ecal_3x3",                         &ecal3x3Energy_);
   tree_->Branch("ecal_1x1",                         &ecal1x1Energy_);
   tree_->Branch("ecal_5x5",                         &ecal5x5Energy_);
+  tree_->Branch("ecal_15x15",                       &ecal15x15Energy_);
+  tree_->Branch("ecal_25x25",                       &ecal25x25Energy_);
   tree_->Branch("ecal_detID",                       &ecalDetId_);
   tree_->Branch("ehcal_detID",                      &ehcalDetId_);
   //tree_->Branch("tracker_3into3",                   &hoEnergy_);
@@ -983,6 +992,8 @@ void HEP17MuonAnalyzer::clearVectors() {
   ecal1x1Energy_.clear();
   ecal3x3Energy_.clear();
   ecal5x5Energy_.clear();
+  ecal15x15Energy_.clear();
+  ecal25x25Energy_.clear();
   hcal1x1Energy_.clear();
   hcalHot_.clear();
   hcal_ieta_.clear();
