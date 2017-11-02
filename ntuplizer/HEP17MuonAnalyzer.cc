@@ -43,6 +43,13 @@
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgo.h" 
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgoRcd.h"
 
+#include "CondFormats/HcalObjects/interface/HcalRespCorrs.h"
+#include "CondFormats/DataRecord/interface/HcalRespCorrsRcd.h"
+
+#include "CalibFormats/HcalObjects/interface/HcalCalibrations.h"
+#include "CalibFormats/HcalObjects/interface/HcalDbService.h"
+#include "CalibFormats/HcalObjects/interface/HcalDbRecord.h"
+
 #include "Calibration/IsolatedParticles/interface/CaloPropagateTrack.h"
 #include "Calibration/IsolatedParticles/interface/eECALMatrix.h" 
 #include "Calibration/IsolatedParticles/interface/eHCALMatrix.h" 
@@ -80,6 +87,8 @@ private:
   int    matchId(const HcalDetId&, const HcalDetId&);
   double activeLength(const DetId&);
   bool   isGoodVertex(const reco::Vertex& vtx);
+  double respCorr(const DetId& id);
+  double gainFactor(const edm::ESHandle<HcalDbService>&, const HcalDetId& id);
   int    depth16HE(int ieta, int iphi);
 
   // ----------member data ---------------------------
@@ -91,6 +100,8 @@ private:
   int                        verbosity_, maxDepth_, kount_;
   bool                       useRaw_;
   const int                  MaxDepth=7;
+  const HcalTopology        *theHBHETopology;
+  HcalRespCorrs             *respCorrs_;
 
   edm::EDGetTokenT<edm::TriggerResults>                   tok_trigRes_;
   edm::EDGetTokenT<reco::VertexCollection>                tok_Vtx_;
@@ -115,20 +126,13 @@ private:
   std::vector<double>       ecal1x1Energy_,ecal3x3Energy_,ecal5x5Energy_,ecal15x15Energy_,ecal25x25Energy_,hcal1x1Energy_, pMuon_;
   std::vector<int>          hcalHot_;
   std::vector<unsigned int> ecalDetId_,hcalDetId_,ehcalDetId_;
-  std::vector<double>       hcalDepth1Energy_, hcalDepth1Energy1_, hcalDepth1Energy2_, hcalDepth1Energy3_, hcalDepth1Energy4_, hcalDepth1Energy5_, hcalDepth1Energy6_, hcalDepth1Energy7_, hcalDepth1Energy8_, hcalDepth1ActiveLength_;
-  std::vector<double>       hcalDepth2Energy_, hcalDepth2Energy1_, hcalDepth2Energy2_, hcalDepth2Energy3_, hcalDepth2Energy4_, hcalDepth2Energy5_, hcalDepth2Energy6_, hcalDepth2Energy7_, hcalDepth2Energy8_, hcalDepth2ActiveLength_;
-  std::vector<double>       hcalDepth3Energy_, hcalDepth3Energy1_, hcalDepth3Energy2_, hcalDepth3Energy3_, hcalDepth3Energy4_, hcalDepth3Energy5_, hcalDepth3Energy6_, hcalDepth3Energy7_, hcalDepth3Energy8_, hcalDepth3ActiveLength_;
-  std::vector<double>       hcalDepth4Energy_, hcalDepth4Energy1_, hcalDepth4Energy2_, hcalDepth4Energy3_, hcalDepth4Energy4_, hcalDepth4Energy5_, hcalDepth4Energy6_, hcalDepth4Energy7_, hcalDepth4Energy8_, hcalDepth4ActiveLength_;
-  std::vector<double>       hcalDepth5Energy_, hcalDepth5Energy1_, hcalDepth5Energy2_, hcalDepth5Energy3_, hcalDepth5Energy4_, hcalDepth5Energy5_, hcalDepth5Energy6_, hcalDepth5Energy7_, hcalDepth5Energy8_, hcalDepth5ActiveLength_;
-  std::vector<double>       hcalDepth6Energy_, hcalDepth6Energy1_, hcalDepth6Energy2_, hcalDepth6Energy3_, hcalDepth6Energy4_, hcalDepth6Energy5_, hcalDepth6Energy6_, hcalDepth6Energy7_, hcalDepth6Energy8_, hcalDepth6ActiveLength_;
-  std::vector<double>       hcalDepth7Energy_, hcalDepth7Energy1_, hcalDepth7Energy2_, hcalDepth7Energy3_, hcalDepth7Energy4_, hcalDepth7Energy5_, hcalDepth7Energy6_, hcalDepth7Energy7_, hcalDepth7Energy8_, hcalDepth7ActiveLength_;
-  std::vector<double>       hcalDepth1EnergyHot_, hcalDepth1ActiveLengthHot_;
-  std::vector<double>       hcalDepth2EnergyHot_, hcalDepth2ActiveLengthHot_;
-  std::vector<double>       hcalDepth3EnergyHot_, hcalDepth3ActiveLengthHot_;
-  std::vector<double>       hcalDepth4EnergyHot_, hcalDepth4ActiveLengthHot_;
-  std::vector<double>       hcalDepth5EnergyHot_, hcalDepth5ActiveLengthHot_;
-  std::vector<double>       hcalDepth6EnergyHot_, hcalDepth6ActiveLengthHot_;
-  std::vector<double>       hcalDepth7EnergyHot_, hcalDepth7ActiveLengthHot_;
+  std::vector<double>       hcalDepth1Charge_, hcalDepth1UEnergy_, hcalDepth1Energy_, hcalDepth1Energy1_, hcalDepth1Energy2_, hcalDepth1Energy3_, hcalDepth1Energy4_, hcalDepth1Energy5_, hcalDepth1Energy6_, hcalDepth1Energy7_, hcalDepth1Energy8_, hcalDepth1ActiveLength_;
+  std::vector<double>       hcalDepth2Charge_, hcalDepth2UEnergy_, hcalDepth2Energy_, hcalDepth2Energy1_, hcalDepth2Energy2_, hcalDepth2Energy3_, hcalDepth2Energy4_, hcalDepth2Energy5_, hcalDepth2Energy6_, hcalDepth2Energy7_, hcalDepth2Energy8_, hcalDepth2ActiveLength_;
+  std::vector<double>       hcalDepth3Charge_, hcalDepth3UEnergy_, hcalDepth3Energy_, hcalDepth3Energy1_, hcalDepth3Energy2_, hcalDepth3Energy3_, hcalDepth3Energy4_, hcalDepth3Energy5_, hcalDepth3Energy6_, hcalDepth3Energy7_, hcalDepth3Energy8_, hcalDepth3ActiveLength_;
+  std::vector<double>       hcalDepth4Charge_, hcalDepth4UEnergy_, hcalDepth4Energy_, hcalDepth4Energy1_, hcalDepth4Energy2_, hcalDepth4Energy3_, hcalDepth4Energy4_, hcalDepth4Energy5_, hcalDepth4Energy6_, hcalDepth4Energy7_, hcalDepth4Energy8_, hcalDepth4ActiveLength_;
+  std::vector<double>       hcalDepth5Charge_, hcalDepth5UEnergy_, hcalDepth5Energy_, hcalDepth5Energy1_, hcalDepth5Energy2_, hcalDepth5Energy3_, hcalDepth5Energy4_, hcalDepth5Energy5_, hcalDepth5Energy6_, hcalDepth5Energy7_, hcalDepth5Energy8_, hcalDepth5ActiveLength_;
+  std::vector<double>       hcalDepth6Charge_, hcalDepth6UEnergy_, hcalDepth6Energy_, hcalDepth6Energy1_, hcalDepth6Energy2_, hcalDepth6Energy3_, hcalDepth6Energy4_, hcalDepth6Energy5_, hcalDepth6Energy6_, hcalDepth6Energy7_, hcalDepth6Energy8_, hcalDepth6ActiveLength_;
+  std::vector<double>       hcalDepth7Charge_, hcalDepth7UEnergy_, hcalDepth7Energy_, hcalDepth7Energy1_, hcalDepth7Energy2_, hcalDepth7Energy3_, hcalDepth7Energy4_, hcalDepth7Energy5_, hcalDepth7Energy6_, hcalDepth7Energy7_, hcalDepth7Energy8_, hcalDepth7ActiveLength_;
   std::vector<int>          hcal_ieta_, hcal_iphi_, hcal_ieta_hot_, hcal_iphi_hot_;
   std::vector<HcalDDDRecConstants::HcalActiveLength> actHB, actHE;
   std::vector<std::string>  all_triggers;
@@ -140,7 +144,7 @@ private:
   unsigned int              runNumber_, nvtx_, nvtx_notFake_,eventNumber_ , lumiNumber_, bxNumber_;
  };
 
-HEP17MuonAnalyzer::HEP17MuonAnalyzer(const edm::ParameterSet& iConfig) {
+HEP17MuonAnalyzer::HEP17MuonAnalyzer(const edm::ParameterSet& iConfig): theHBHETopology(nullptr), respCorrs_(nullptr) {
   //now do what ever initialization is needed
   kount_            = 0;
   HLTriggerResults_ = iConfig.getParameter<edm::InputTag>("HLTriggerResults");
@@ -269,10 +273,15 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
   edm::ESHandle<CaloTopology> theCaloTopology;
   iSetup.get<CaloTopologyRecord>().get(theCaloTopology);
   const CaloTopology *caloTopology = theCaloTopology.product();
-  
+ 
+  /* 
   edm::ESHandle<HcalTopology> htopo;
   iSetup.get<HcalRecNumberingRecord>().get(htopo);
   const HcalTopology* theHBHETopology = htopo.product();
+  */
+
+  edm::ESHandle<HcalDbService> conditions;
+  iSetup.get<HcalDbRecord>().get(conditions);
 
   // Relevant blocks from iEvent
   edm::Handle<reco::VertexCollection> vtx;
@@ -330,15 +339,15 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
       //std::cout << "before loop into muons"<<std::endl;
     for (reco::MuonCollection::const_iterator RecMuon = _Muon->begin(); RecMuon!= _Muon->end(); ++RecMuon)  {
       
-      double eEcal(-10000.0), eEcal3x3(-10000.0), eEcal5x5(-10000.0), eEcal15x15(-10000.0), eEcal25x25(-10000.0),eHcal(-10000.0), activeLengthTot(0), activeLengthHotTot(0);
+      double eEcal(-10000.0), eEcal3x3(-10000.0), eEcal5x5(-10000.0), eEcal15x15(-10000.0), eEcal25x25(-10000.0),eHcal(-10000.0);
       int ieta(-1000), iphi(-1000), ietahot(-1000), iphihot(-1000);
-      double eHcalDepth[MaxDepth], eHcalDepth1[MaxDepth], eHcalDepth2[MaxDepth], eHcalDepth3[MaxDepth], eHcalDepth4[MaxDepth], eHcalDepth5[MaxDepth], eHcalDepth6[MaxDepth], eHcalDepth7[MaxDepth], eHcalDepth8[MaxDepth],eHcalDepthHot[MaxDepth];
-      double activeL[MaxDepth], activeHotL[MaxDepth];
+      double chgHcalDepth[MaxDepth], ueHcalDepth[MaxDepth], eHcalDepth[MaxDepth], eHcalDepth1[MaxDepth], eHcalDepth2[MaxDepth], eHcalDepth3[MaxDepth], eHcalDepth4[MaxDepth], eHcalDepth5[MaxDepth], eHcalDepth6[MaxDepth], eHcalDepth7[MaxDepth], eHcalDepth8[MaxDepth];
+      double activeL[MaxDepth];
       int isHot(0);
       int tmpmatch(0);
 
       for (int i=0; i<MaxDepth; ++i){
-        eHcalDepth[i] = eHcalDepthHot[i] = activeL[i] = activeHotL[i] = eHcalDepth1[i] = eHcalDepth2[i] = eHcalDepth3[i] = eHcalDepth4[i] = eHcalDepth5[i] = eHcalDepth6[i] = eHcalDepth7[i] = eHcalDepth8[i] = -10000.0;
+        chgHcalDepth[i] = ueHcalDepth[i] = eHcalDepth[i] = activeL[i] = eHcalDepth1[i] = eHcalDepth2[i] = eHcalDepth3[i] = eHcalDepth4[i] = eHcalDepth5[i] = eHcalDepth6[i] = eHcalDepth7[i] = eHcalDepth8[i] = -10000.0;
       }
 
       if (RecMuon->innerTrack().isNonnull()) {
@@ -546,12 +555,30 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 
 	  for (unsigned int i=0; i<ehdepth.size(); ++i) {
 	    eHcalDepth[ehdepth[i].second-1] = ehdepth[i].first;
+
             //HcalSubdetector subdet0 = (hborhe) ? ((ehdepth[i].second >= depth16HE(ieta, iphi)) ? HcalEndcap : HcalBarrel) : subdet;
             HcalSubdetector subdet0 = (hborhe) ? ((ehdepth[i].second >= depthHE) ? HcalEndcap : HcalBarrel) : subdet;
 
             HcalDetId hcid0(subdet0,ieta,iphi,ehdepth[i].second);
             double actL = activeLength(DetId(hcid0));
             activeL[ehdepth[i].second-1] = actL;
+            //get charge 
+            double ene  = ehdepth[i].first;
+            double chg(ene), enec(ene);
+            double corr = respCorr(DetId(hcid0));
+            if (corr != 0) {enec /= corr; chg /= corr;}
+#ifdef EDM_ML_DEBUG
+                edm::LogVerbatim("HBHEMuon") << hcid0 << " Corr " << corr
+                                             << " E " << ene << ":" << enec;
+#endif
+            double gain = gainFactor(conditions,hcid0);
+            if (gain  != 0) chg  /= gain;
+#ifdef EDM_ML_DEBUG
+                edm::LogVerbatim("HBHEMuon") << hcid0 << " Gain " << gain
+                                             << " C " << chg;
+#endif
+            chgHcalDepth[ehdepth[i].second-1] = enec;
+            ueHcalDepth[ehdepth[i].second-1] = chg;
           }
 
 	  HcalDetId           hotCell;
@@ -569,6 +596,23 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
       hcal_iphi_.push_back(iphi);
       hcal_ieta_hot_.push_back(ietahot);
       hcal_iphi_hot_.push_back(iphihot);
+
+      hcalDepth1UEnergy_.push_back(ueHcalDepth[0]);
+      hcalDepth2UEnergy_.push_back(ueHcalDepth[1]);
+      hcalDepth3UEnergy_.push_back(ueHcalDepth[2]);
+      hcalDepth4UEnergy_.push_back(ueHcalDepth[3]);
+      hcalDepth5UEnergy_.push_back(ueHcalDepth[4]);
+      hcalDepth6UEnergy_.push_back(ueHcalDepth[5]);
+      hcalDepth7UEnergy_.push_back(ueHcalDepth[6]);
+
+      hcalDepth1Charge_.push_back(chgHcalDepth[0]);
+      hcalDepth2Charge_.push_back(chgHcalDepth[1]);
+      hcalDepth3Charge_.push_back(chgHcalDepth[2]);
+      hcalDepth4Charge_.push_back(chgHcalDepth[3]);
+      hcalDepth5Charge_.push_back(chgHcalDepth[4]);
+      hcalDepth6Charge_.push_back(chgHcalDepth[5]);
+      hcalDepth7Charge_.push_back(chgHcalDepth[6]);
+
       hcalDepth1Energy_.push_back(eHcalDepth[0]);
       hcalDepth2Energy_.push_back(eHcalDepth[1]);
       hcalDepth3Energy_.push_back(eHcalDepth[2]);
@@ -650,13 +694,6 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
       hcalDepth7ActiveLength_.push_back(activeL[6]);
 
       hcalHot_.push_back(isHot);
-      hcalDepth1EnergyHot_.push_back(eHcalDepthHot[0]);
-      hcalDepth2EnergyHot_.push_back(eHcalDepthHot[1]);
-      hcalDepth3EnergyHot_.push_back(eHcalDepthHot[2]);
-      hcalDepth4EnergyHot_.push_back(eHcalDepthHot[3]);
-      hcalDepth5EnergyHot_.push_back(eHcalDepthHot[4]);
-      hcalDepth6EnergyHot_.push_back(eHcalDepthHot[5]);
-      hcalDepth7EnergyHot_.push_back(eHcalDepthHot[6]);
 
          }
 	}
@@ -703,10 +740,19 @@ void HEP17MuonAnalyzer::beginJob() {
   tree_->Branch("hcal_iphi",        &hcal_iphi_);
   tree_->Branch("hcal_ieta_hot",    &hcal_ieta_hot_);
   tree_->Branch("hcal_iphi_hot",    &hcal_iphi_hot_);
+  tree_->Branch("hcal_chgdepth1",    &hcalDepth1Charge_);
+  tree_->Branch("hcal_chgdepth2",    &hcalDepth2Charge_);
+  tree_->Branch("hcal_chgdepth3",    &hcalDepth3Charge_);
+  tree_->Branch("hcal_chgdepth4",    &hcalDepth4Charge_);
+  tree_->Branch("hcal_uedepth1",     &hcalDepth1UEnergy_);
+  tree_->Branch("hcal_uedepth2",     &hcalDepth2UEnergy_);
+  tree_->Branch("hcal_uedepth3",     &hcalDepth3UEnergy_);
+  tree_->Branch("hcal_uedepth4",     &hcalDepth4UEnergy_);
   tree_->Branch("hcal_edepth1",     &hcalDepth1Energy_);
   tree_->Branch("hcal_edepth2",     &hcalDepth2Energy_);
   tree_->Branch("hcal_edepth3",     &hcalDepth3Energy_);
   tree_->Branch("hcal_edepth4",     &hcalDepth4Energy_);
+  
   //1
   tree_->Branch("hcal_edepth11",     &hcalDepth1Energy1_);
   tree_->Branch("hcal_edepth12",     &hcalDepth2Energy1_);
@@ -752,16 +798,10 @@ void HEP17MuonAnalyzer::beginJob() {
   tree_->Branch("hcal_activeL2",    &hcalDepth2ActiveLength_);
   tree_->Branch("hcal_activeL3",    &hcalDepth3ActiveLength_);
   tree_->Branch("hcal_activeL4",    &hcalDepth4ActiveLength_);
-  tree_->Branch("hcal_edepthHot1",  &hcalDepth1EnergyHot_);
-  tree_->Branch("hcal_edepthHot2",  &hcalDepth2EnergyHot_);
-  tree_->Branch("hcal_edepthHot3",  &hcalDepth3EnergyHot_);
-  tree_->Branch("hcal_edepthHot4",  &hcalDepth4EnergyHot_);
-  tree_->Branch("hcal_activeHotL1", &hcalDepth1ActiveLength_);
-  tree_->Branch("hcal_activeHotL2", &hcalDepth2ActiveLength_);
-  tree_->Branch("hcal_activeHotL3", &hcalDepth3ActiveLength_);
-  tree_->Branch("hcal_activeHotL4", &hcalDepth4ActiveLength_);
   
   if (maxDepth_ > 4) {
+    tree_->Branch("hcal_chgdepth5",   &hcalDepth5Charge_);
+    tree_->Branch("hcal_uedepth5",    &hcalDepth5UEnergy_);
     tree_->Branch("hcal_edepth5",     &hcalDepth5Energy_);
     tree_->Branch("hcal_edepth15",    &hcalDepth5Energy1_);
     tree_->Branch("hcal_edepth25",    &hcalDepth5Energy2_);
@@ -773,9 +813,9 @@ void HEP17MuonAnalyzer::beginJob() {
     tree_->Branch("hcal_edepth85",    &hcalDepth5Energy8_);
 
     tree_->Branch("hcal_activeL5",    &hcalDepth5ActiveLength_);
-    tree_->Branch("hcal_edepthHot5",  &hcalDepth5EnergyHot_);
-    tree_->Branch("hcal_activeHotL5", &hcalDepth5ActiveLength_);
     if (maxDepth_ > 5) {
+      tree_->Branch("hcal_chgdepth6",   &hcalDepth6Charge_);
+      tree_->Branch("hcal_uedepth6",    &hcalDepth6UEnergy_);
       tree_->Branch("hcal_edepth6",     &hcalDepth6Energy_);
       tree_->Branch("hcal_edepth16",    &hcalDepth6Energy1_);
       tree_->Branch("hcal_edepth26",    &hcalDepth6Energy2_);
@@ -787,9 +827,9 @@ void HEP17MuonAnalyzer::beginJob() {
       tree_->Branch("hcal_edepth86",    &hcalDepth6Energy8_);
 
       tree_->Branch("hcal_activeL6",    &hcalDepth6ActiveLength_);
-      tree_->Branch("hcal_edepthHot6",  &hcalDepth6EnergyHot_);
-      tree_->Branch("hcal_activeHotL6", &hcalDepth6ActiveLength_);
       if (maxDepth_ > 6) {
+        tree_->Branch("hcal_chgdepth7",   &hcalDepth7Charge_);
+        tree_->Branch("hcal_uedepth7",    &hcalDepth7UEnergy_);
 	tree_->Branch("hcal_edepth7",     &hcalDepth7Energy_);
         tree_->Branch("hcal_edepth17",    &hcalDepth7Energy1_);
         tree_->Branch("hcal_edepth27",    &hcalDepth7Energy2_);
@@ -801,8 +841,6 @@ void HEP17MuonAnalyzer::beginJob() {
         tree_->Branch("hcal_edepth87",    &hcalDepth7Energy8_);
 
 	tree_->Branch("hcal_activeL7",    &hcalDepth7ActiveLength_);
-	tree_->Branch("hcal_edepthHot7",  &hcalDepth7EnergyHot_);
-	tree_->Branch("hcal_activeHotL7", &hcalDepth7ActiveLength_);
       }
     }
   }
@@ -902,6 +940,15 @@ void HEP17MuonAnalyzer::beginRun(edm::Run const& iRun, edm::EventSetup const& iS
     edm::LogError("HBHEMuon") << "Error! HLT config extraction with process name " 
 			      << "HLT" << " failed";
   }
+
+  edm::ESHandle<HcalTopology> htopo;
+  iSetup.get<HcalRecNumberingRecord>().get(htopo);
+  theHBHETopology = htopo.product();
+
+  edm::ESHandle<HcalRespCorrs> resp;
+  iSetup.get<HcalRespCorrsRcd>().get(resp);
+  respCorrs_ = new HcalRespCorrs(*resp.product());
+  respCorrs_->setTopo(theHBHETopology);
   
 }
 
@@ -1000,6 +1047,22 @@ void HEP17MuonAnalyzer::clearVectors() {
   hcal_iphi_.clear();
   hcal_ieta_hot_.clear();
   hcal_iphi_hot_.clear();
+  hcalDepth1UEnergy_.clear();
+  hcalDepth2UEnergy_.clear();
+  hcalDepth3UEnergy_.clear();
+  hcalDepth4UEnergy_.clear();
+  hcalDepth5UEnergy_.clear();
+  hcalDepth6UEnergy_.clear();
+  hcalDepth7UEnergy_.clear();
+
+  hcalDepth1Charge_.clear();
+  hcalDepth2Charge_.clear();
+  hcalDepth3Charge_.clear();
+  hcalDepth4Charge_.clear();
+  hcalDepth5Charge_.clear();
+  hcalDepth6Charge_.clear();
+  hcalDepth7Charge_.clear();
+
   hcalDepth1Energy_.clear();
   hcalDepth2Energy_.clear();
   hcalDepth3Energy_.clear();
@@ -1072,20 +1135,6 @@ void HEP17MuonAnalyzer::clearVectors() {
   hcalDepth5ActiveLength_.clear();
   hcalDepth6ActiveLength_.clear();
   hcalDepth7ActiveLength_.clear();
-  hcalDepth1EnergyHot_.clear();
-  hcalDepth2EnergyHot_.clear();
-  hcalDepth3EnergyHot_.clear();
-  hcalDepth4EnergyHot_.clear();
-  hcalDepth5EnergyHot_.clear();
-  hcalDepth6EnergyHot_.clear();
-  hcalDepth7EnergyHot_.clear();
-  hcalDepth1ActiveLengthHot_.clear();
-  hcalDepth2ActiveLengthHot_.clear();
-  hcalDepth3ActiveLengthHot_.clear();
-  hcalDepth4ActiveLengthHot_.clear();
-  hcalDepth5ActiveLengthHot_.clear();
-  hcalDepth6ActiveLengthHot_.clear();
-  hcalDepth7ActiveLengthHot_.clear();
   hltresults.clear();
 }
 
@@ -1136,6 +1185,26 @@ double HEP17MuonAnalyzer::activeLength(const DetId& id_) {
   return lx;
 }
 
+double HEP17MuonAnalyzer::respCorr(const DetId& id) {
+  double cfac(1.0);
+  /*
+  if (useMyCorr_) {
+    auto itr = corrValue_.find(id);
+    if (itr != corrValue_.end()) cfac = itr->second;
+  } else*/
+  if (respCorrs_ != nullptr) {
+    cfac = (respCorrs_->getValues(id))->getValue();
+  }
+  return cfac;
+}
+
+double HEP17MuonAnalyzer::gainFactor(const edm::ESHandle<HcalDbService>& conditions, const HcalDetId& id) {
+  double gain(0.0);
+  const HcalCalibrations& calibs=conditions->getHcalCalibrations(id);
+  for (int capid=0; capid<4; ++capid)
+    gain += (0.25*calibs.respcorrgain(capid));
+  return gain;
+}
 
 int HEP17MuonAnalyzer::depth16HE(int ieta, int iphi) {
 
