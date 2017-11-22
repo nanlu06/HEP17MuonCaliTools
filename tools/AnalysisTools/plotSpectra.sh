@@ -1,0 +1,1 @@
+ ./bin/sig_only_fit_data /eos/cms/store/group/dpg_hcal/comm_hcal/nlu/ntuples/tree_data3_v5BCD_Cert_294927-302654_phi_pathlength_trkmatch.root /afs/cern.ch/user/n/nlu/work/private/CMS/HCal/MIPCali/plots/test_spectra/
