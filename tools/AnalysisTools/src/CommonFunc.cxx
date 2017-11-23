@@ -97,3 +97,67 @@ void CommonFunc::SetAtlasStyle()
   gROOT->SetStyle("ATLAS");
   gROOT->ForceStyle();
 }
+
+//Axis
+const float axisTitleSize = 0.06;
+const float axisTitleOffset = .8;
+
+const float axisTitleSizeRatioX   = 0.18;
+const float axisLabelSizeRatioX   = 0.12;
+const float axisTitleOffsetRatioX = 0.94;
+
+const float axisTitleSizeRatioY   = 0.15;
+const float axisLabelSizeRatioY   = 0.108;
+const float axisTitleOffsetRatioY = 0.32;
+
+//Margins
+const float leftMargin   = 0.12;
+const float rightMargin  = 0.05;
+const float topMargin    = 0.07;
+const float bottomMargin = 0.12;
+
+//CMS STANDARD
+TString CMSText = "CMS";
+TString extraText   = "Internal";
+//TString extraText   = "Preliminary";
+TString lumiText = "5.9 fb^{-1} (13 TeV)";
+//TString lumiText = "35.9 fb^{-1} (13 TeV)";
+//TString lumiText = "Simulation (13 TeV)";
+
+bool AddCMS( TCanvas* C )
+{
+  C->cd();
+  float lumix = 0.905;
+  float lumiy = 0.945;
+  float lumifont = 42;
+  
+  float cmsx = 0.185;
+  float cmsy = 0.940;
+  float cmsTextFont   = 61;  // default is helvetic-bold
+  float extrax = cmsx + 0.118;
+  float extray = cmsy;
+  float extraTextFont = 52;  // default is helvetica-italics
+  // ratio of "CMS" and extra text size
+  float extraOverCmsTextSize  = 0.76;
+  float cmsSize = 0.06;
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextAngle(0);
+  latex.SetTextColor(kBlack);    
+  float extraTextSize = extraOverCmsTextSize*cmsSize;
+  latex.SetTextFont(lumifont);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(cmsSize);    
+  latex.DrawLatex(lumix, lumiy,lumiText);
+
+  latex.SetTextFont(cmsTextFont);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(cmsSize);
+  latex.DrawLatex(cmsx, cmsy, CMSText);
+   
+  latex.SetTextFont(extraTextFont);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(extraTextSize);
+  latex.DrawLatex(extrax, extray, extraText);
+  return true;
+};

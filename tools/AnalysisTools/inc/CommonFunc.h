@@ -7,6 +7,7 @@ namespace CommonFunc{
   bool IsNaN(double var);
   TStyle* AtlasStyle();
   void SetAtlasStyle();
+  bool AddCMS( TCanvas* C );
 };
 
 

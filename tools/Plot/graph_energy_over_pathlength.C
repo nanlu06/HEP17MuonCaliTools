@@ -1,73 +1,33 @@
-TStyle* AtlasStyle()
-{
-  TStyle *atlasStyle = new TStyle("ATLAS","Atlas style");
-  Int_t icol=0; // WHITE
-  atlasStyle->SetFrameBorderMode(icol);
-  atlasStyle->SetFrameFillColor(icol);
-  atlasStyle->SetCanvasBorderMode(icol);
-  atlasStyle->SetCanvasColor(icol);
-  atlasStyle->SetPadBorderMode(icol);
-  atlasStyle->SetPadColor(icol);
-  atlasStyle->SetStatColor(icol);
+//Axis
+const float axisTitleSize = 0.06;
+const float axisTitleOffset = .8;
 
-  atlasStyle->SetPaperSize(20,26);
+const float axisTitleSizeRatioX   = 0.18;
+const float axisLabelSizeRatioX   = 0.12;
+const float axisTitleOffsetRatioX = 0.94;
 
-  atlasStyle->SetPadTopMargin(0.05);
-  atlasStyle->SetPadRightMargin(0.05);
-  atlasStyle->SetPadBottomMargin(0.16);
-  atlasStyle->SetPadLeftMargin(0.16);
+const float axisTitleSizeRatioY   = 0.15;
+const float axisLabelSizeRatioY   = 0.108;
+const float axisTitleOffsetRatioY = 0.32;
 
-  atlasStyle->SetTitleXOffset(1.1);
-  atlasStyle->SetTitleYOffset(1.3);
+//Margins
+const float leftMargin   = 0.12;
+const float rightMargin  = 0.05;
+const float topMargin    = 0.07;
+const float bottomMargin = 0.12;
 
-  Int_t font=42; // Helvetica
-  Double_t tsize=0.05; // originally 0.05
-  atlasStyle->SetTextFont(font);
-  
-  atlasStyle->SetTextSize(tsize);
-  atlasStyle->SetLabelFont(font,"x");
-  atlasStyle->SetTitleFont(font,"x");
-  atlasStyle->SetLabelFont(font,"y");
-  atlasStyle->SetTitleFont(font,"y");
-  atlasStyle->SetLabelFont(font,"z");
-  atlasStyle->SetTitleFont(font,"z");
-  
-  atlasStyle->SetLabelSize(tsize,"x");
-  atlasStyle->SetTitleSize(tsize,"x");
-  atlasStyle->SetLabelSize(tsize,"y");
-  atlasStyle->SetTitleSize(tsize,"y");
-  atlasStyle->SetLabelSize(tsize,"z");
-  atlasStyle->SetTitleSize(tsize,"z");
+//CMS STANDARD
+TString CMSText = "CMS";
+TString extraText   = "Internal";
+//TString extraText   = "Preliminary";
+TString lumiText = "5.9 fb^{-1} (13 TeV)";
+//TString lumiText = "35.9 fb^{-1} (13 TeV)";
+//TString lumiText = "Simulation (13 TeV)";
 
-  atlasStyle->SetMarkerStyle(20);
-  atlasStyle->SetMarkerSize(1.2);
-  atlasStyle->SetHistLineWidth((Width_t)3.0);
-  atlasStyle->SetLineStyleString(2,"[12 12]"); // postscript dashes
-
-  atlasStyle->SetEndErrorSize(0.);
-  atlasStyle->SetOptTitle(0);
-  atlasStyle->SetOptStat(0);
-  atlasStyle->SetOptFit(0);
-  atlasStyle->SetPadTickX(1);
-  atlasStyle->SetPadTickY(1);
-
-  return atlasStyle;
-
-}
-
-void SetAtlasStyle()
-{
-  std::cout << "\nApplying ATLAS style settings...\n" << std::endl ;
-  TStyle* atlasStyle = AtlasStyle();
-  gROOT->SetStyle("ATLAS");
-  gROOT->ForceStyle();
-}
-
+bool AddCMS( TCanvas* C );
 
 void graph_energy_over_pathlength() {
    
-   SetAtlasStyle();
-
    TCanvas *c1 = new TCanvas("c1","A Simple Graph Example",200,10,700,500);
 
    const Int_t n = 6;
@@ -212,7 +172,7 @@ void graph_energy_over_pathlength() {
     legend->AddEntry(gr3, "ieta = 24", "L");
     legend->Draw("same");
 
-
+  AddCMS(c1);
   c1->SaveAs("test_per_path_Oct19_v0_Cut10MeV.png");
   c1->SaveAs("test_per_path_Oct19_v0_Cut10MeV.pdf");
 
@@ -220,3 +180,41 @@ void graph_energy_over_pathlength() {
    c1->Update();
    c1->Modified();
 }
+
+bool AddCMS( TCanvas* C )
+{
+  C->cd();
+  float lumix = 0.905;
+  float lumiy = 0.945;
+  float lumifont = 42;
+  
+  float cmsx = 0.185;
+  float cmsy = 0.940;
+  float cmsTextFont   = 61;  // default is helvetic-bold
+  float extrax = cmsx + 0.118;
+  float extray = cmsy;
+  float extraTextFont = 52;  // default is helvetica-italics
+  // ratio of "CMS" and extra text size
+  float extraOverCmsTextSize  = 0.76;
+  float cmsSize = 0.06;
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextAngle(0);
+  latex.SetTextColor(kBlack);    
+  float extraTextSize = extraOverCmsTextSize*cmsSize;
+  latex.SetTextFont(lumifont);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(cmsSize);    
+  latex.DrawLatex(lumix, lumiy,lumiText);
+
+  latex.SetTextFont(cmsTextFont);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(cmsSize);
+  latex.DrawLatex(cmsx, cmsy, CMSText);
+   
+  latex.SetTextFont(extraTextFont);
+  latex.SetTextAlign(31); 
+  latex.SetTextSize(extraTextSize);
+  latex.DrawLatex(extrax, extray, extraText);
+  return true;
+};
