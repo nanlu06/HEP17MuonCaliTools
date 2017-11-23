@@ -551,7 +551,7 @@ ene.push_back(6.4450e-01); ene.push_back( 1.0759e-02); ene.push_back(1.0681e-02)
 
   int idepth = 2;
 
-  if(idepth=2){
+  if(idepth==2){
 
       //dep1
       //float x1[n]={};
