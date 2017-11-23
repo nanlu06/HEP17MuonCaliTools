@@ -124,7 +124,7 @@ TString lumiText = "5.9 fb^{-1} (13 TeV)";
 //TString lumiText = "35.9 fb^{-1} (13 TeV)";
 //TString lumiText = "Simulation (13 TeV)";
 
-bool AddCMS( TCanvas* C )
+bool CommonFunc::AddCMS( TCanvas* C )
 {
   C->cd();
   float lumix = 0.905;
