@@ -1,1 +1,4 @@
- ./bin/sig_only_fit_data /eos/cms/store/group/dpg_hcal/comm_hcal/nlu/ntuples/tree_data3_v5BCD_Cert_294927-302654_phi_pathlength_trkmatch.root /afs/cern.ch/user/n/nlu/work/private/CMS/HCal/MIPCali/plots/test_spectra/
+#!/bin/bash
+cd /afs/cern.ch/user/j/jmao/work/public/releases/HCalCalibration/CMSSW_9_3_1/src/HEP17MuonCaliTools/tools/AnalysisTools
+eval `scramv1 runtime -sh`
+./bin/sig_only_fit_data tree_test_code.root /afs/cern.ch/user/j/jmao/public/HCalMipCali/Plots/test_tree9/ out.root
