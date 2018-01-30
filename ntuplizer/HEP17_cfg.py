@@ -13,8 +13,8 @@ process.GlobalTag.globaltag='92X_dataRun2_Prompt_v9'
 process.load("RecoLocalCalo.EcalRecAlgos.EcalSeverityLevelESProducer_cfi")
 process.load("Calibration.HcalCalibAlgos.hep17Muon_cfi")
 
-if 'MessageLogger' in process.__dict__:
-    process.MessageLogger.categories.append('HBHEMuon')
+#if 'MessageLogger' in process.__dict__:
+#    process.MessageLogger.categories.append('HBHEMuon')
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",

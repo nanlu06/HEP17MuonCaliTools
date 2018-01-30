@@ -4,6 +4,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include "TPRegexp.h"
+#include <TLorentzVector.h>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -115,7 +116,7 @@ private:
   std::vector<double>       globalMuonHits_,matchedStat_,globalTrckPt_;
   std::vector<double>       globalTrckEta_,globalTrckPhi_,trackerLayer_;
   std::vector<double>       innerTrackpt_,innerTracketa_,innerTrackphi_;
-  std::vector<int>          matchedId_,numPixelLayers_;
+  std::vector<int>          matchedId_,numPixelLayers_,muon_tight1_, muon_tight2_;
   std::vector<double>       chiTracker_,dxyTracker_,dzTracker_;
   std::vector<double>       outerTrackPt_,outerTrackEta_,outerTrackPhi_;
   std::vector<double>       outerTrackChi_,outerTrackHits_,outerTrackRHits_;
@@ -123,7 +124,7 @@ private:
   std::vector<bool>         innerTrack_, outerTrack_, globalTrack_;
   std::vector<double>       isolationR04_,isolationR03_, TrkisolationR03_;
   std::vector<double>       energyMuon_,hcalEnergy_,ecalEnergy_;//hoEnergy_;
-  std::vector<double>       ecal1x1Energy_,ecal3x3Energy_,ecal5x5Energy_,ecal15x15Energy_,ecal25x25Energy_,hcal1x1Energy_, pMuon_;
+  std::vector<double>       ecal1x1Energy_,ecal3x3Energy_,ecal5x5Energy_,ecal15x15Energy_,ecal25x25Energy_,hcal1x1Energy_, pMuon_, cMuon_, DiMuonM_;
   std::vector<int>          hcalHot_;
   std::vector<unsigned int> ecalDetId_,hcalDetId_,ehcalDetId_;
   std::vector<double>       hcalDepth1Charge_, hcalDepth1UEnergy_, hcalDepth1Energy_, hcalDepth1Energy1_, hcalDepth1Energy2_, hcalDepth1Energy3_, hcalDepth1Energy4_, hcalDepth1Energy5_, hcalDepth1Energy6_, hcalDepth1Energy7_, hcalDepth1Energy8_, hcalDepth1ActiveLength_;
@@ -139,9 +140,9 @@ private:
   ////////////////////////////////////////////////////////////
 
   TTree                    *tree_;
-  std::vector<bool>         muon_is_good_, muon_global_, muon_tracker_, isloosemuon_, ismediummuon_;// istightmuon_;
+  std::vector<bool>         muon_is_good_, muon_global_, muon_tracker_;// ismediummuon_; //isloosemuon_, istightmuon_;
   std::vector<int>          hltresults;
-  unsigned int              runNumber_, nvtx_, nvtx_notFake_,eventNumber_ , lumiNumber_, bxNumber_;
+  unsigned int              runNumber_, nvtx_, nvtx_notFake_, nvtx_good_,eventNumber_ , lumiNumber_, bxNumber_;
  };
 
 HEP17MuonAnalyzer::HEP17MuonAnalyzer(const edm::ParameterSet& iConfig): theHBHETopology(nullptr), respCorrs_(nullptr) {
@@ -321,10 +322,11 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
   edm::LogInfo("HBHEMuon") << "after vertex: ------------ " << std::endl;
   #endif
 
-   nvtx_=0; nvtx_notFake_=0;
+   nvtx_=0; nvtx_notFake_=0; nvtx_good_=0;
    for (reco::VertexCollection::const_iterator it = vtx->begin(); it != vtx->end(); it++) {
     nvtx_++;
     if (!it->isFake()) nvtx_notFake_++;
+    if (isGoodVertex(*it)) nvtx_good_++;
    }
 
 
@@ -375,9 +377,17 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
 	  iphi   = HcalDetId(closestCell).iphi();
 	  bool            hborhe = (std::abs(ieta) == 16);
 
-          if (ieta< 30 && ieta>15 && iphi>62 && iphi<67){
+          bool muon_1 = RecMuon->pt()>20.0;
+          bool muon_2 = muon::isMediumMuon(*RecMuon);
+          bool muon_3 = (RecMuon->pfIsolationR04().sumChargedHadronPt + std::max(0.,RecMuon->pfIsolationR04().sumNeutralHadronEt + RecMuon->pfIsolationR04().sumPhotonEt - (0.5 *RecMuon->pfIsolationR04().sumPUPt))) / RecMuon->pt()<0.15;
+
+          //if (ieta< 30 && ieta>15 && iphi>62 && iphi<67 && muon_1 && muon_2 && muon_3){
+          if (ieta< 30 && ieta>15 && muon_1 && muon_2 && muon_3){
           //if (ieta< 28 && ieta>19 && iphi>62 && iphi<67){
               accept = true;
+              int tight1 = 0;
+              if(muon::isTightMuon(*RecMuon,*firstGoodVertex)) tight1 = 1;
+              muon_tight1_.push_back(tight1);
       // this part is moved from before to here to save time
       muon_is_good_.push_back(RecMuon->isPFMuon());
       muon_global_.push_back(RecMuon->isGlobalMuon());
@@ -387,12 +397,36 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
       phiGlob_.push_back(RecMuon->phi());
       energyMuon_.push_back(RecMuon->energy());
       pMuon_.push_back(RecMuon->p());
+      cMuon_.push_back(RecMuon->charge());
+      TLorentzVector lvMuon;
+      lvMuon.SetPtEtaPhiM(RecMuon->pt(), RecMuon->eta(), RecMuon->phi(), 0.10566);
+             
+      double dimuon_M_tmp=-999.;
+      int tight2 = 0;
+      for (reco::MuonCollection::const_iterator iMuon = _Muon->begin(); iMuon!= _Muon->end(); ++iMuon)  {
+         if(iMuon!=RecMuon && (iMuon->charge()!=RecMuon->charge())){
+           bool muon1 = iMuon->pt()>20.0 && fabs(iMuon->eta())<2.5;
+           bool muon2 = muon::isMediumMuon(*iMuon);
+           bool muon3 = (iMuon->pfIsolationR04().sumChargedHadronPt + std::max(0.,iMuon->pfIsolationR04().sumNeutralHadronEt + iMuon->pfIsolationR04().sumPhotonEt - (0.5 *iMuon->pfIsolationR04().sumPUPt))) / iMuon->pt()<0.15;
+           if(muon1 && muon2 && muon3){ 
+            TLorentzVector Muon_tmp;
+            Muon_tmp.SetPtEtaPhiM(iMuon->pt(), iMuon->eta(), iMuon->phi(), 0.10566);
+            double dimuon_M = (Muon_tmp + lvMuon).M();
+             if(fabs(dimuon_M-91.188)<fabs(dimuon_M_tmp-91.188)){
+                  dimuon_M_tmp = dimuon_M;
+                  if(muon::isTightMuon(*iMuon,*firstGoodVertex)) tight2 = 1;
+             }
+           }
+         }
+      }
+      DiMuonM_.push_back(dimuon_M_tmp);
+      muon_tight2_.push_back(tight2);
 #ifdef EDM_ML_DEBUG
       edm::LogInfo("HBHEMuon") << "Energy:" << RecMuon->energy() << " P:"
                                << RecMuon->p() << std::endl;
 #endif
-      isloosemuon_.push_back(muon::isLooseMuon(*RecMuon));
-      ismediummuon_.push_back(muon::isMediumMuon(*RecMuon));
+      //isloosemuon_.push_back(muon::isLooseMuon(*RecMuon));
+      //ismediummuon_.push_back(muon::isMediumMuon(*RecMuon));
 
       if (RecMuon->track().isNonnull()) {
         trackerLayer_.push_back(RecMuon->track()->hitPattern().trackerLayersWithMeasurement());
@@ -566,19 +600,11 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
             double ene  = ehdepth[i].first;
             double chg(ene), enec(ene);
             double corr = respCorr(DetId(hcid0));
-            if (corr != 0) {enec /= corr; chg /= corr;}
-#ifdef EDM_ML_DEBUG
-                edm::LogVerbatim("HBHEMuon") << hcid0 << " Corr " << corr
-                                             << " E " << ene << ":" << enec;
-#endif
+            if (corr != 0) {enec /= corr;}
             double gain = gainFactor(conditions,hcid0);
             if (gain  != 0) chg  /= gain;
-#ifdef EDM_ML_DEBUG
-                edm::LogVerbatim("HBHEMuon") << hcid0 << " Gain " << gain
-                                             << " C " << chg;
-#endif
-            chgHcalDepth[ehdepth[i].second-1] = enec;
-            ueHcalDepth[ehdepth[i].second-1] = chg;
+            chgHcalDepth[ehdepth[i].second-1] = chg;
+            ueHcalDepth[ehdepth[i].second-1] = enec;
           }
 
 	  HcalDetId           hotCell;
@@ -720,16 +746,21 @@ void HEP17MuonAnalyzer::beginJob() {
   tree_->Branch("BXNumber",          &bxNumber_);
   tree_->Branch("nvtx",              &nvtx_);
   tree_->Branch("nvtx_notFake",      &nvtx_notFake_);
+  tree_->Branch("nvtx_good",         &nvtx_good_);
   tree_->Branch("pt_of_muon",        &ptGlob_);
   tree_->Branch("eta_of_muon",       &etaGlob_);
   tree_->Branch("phi_of_muon",       &phiGlob_);
   tree_->Branch("energy_of_muon",    &energyMuon_);
   tree_->Branch("p_of_muon",         &pMuon_);
+  tree_->Branch("charge_of_muon",    &cMuon_);
+  tree_->Branch("DiMuon_Mass",      &DiMuonM_);
+  tree_->Branch("istight1",         &muon_tight1_);
+  tree_->Branch("istight2",         &muon_tight2_);
   tree_->Branch("PF_Muon",           &muon_is_good_);
   tree_->Branch("Global_Muon",       &muon_global_);
   tree_->Branch("Tracker_muon",      &muon_tracker_);
-  tree_->Branch("isloosemuon",       &isloosemuon_);
-  tree_->Branch("ismediummuon",      &ismediummuon_);
+  //tree_->Branch("isloosemuon",       &isloosemuon_);
+  //tree_->Branch("ismediummuon",      &ismediummuon_);
   //tree_->Branch("istightmuon",       &istightmuon_);
   
   tree_->Branch("hcal_3into3",      &hcalEnergy_);
@@ -991,8 +1022,12 @@ void HEP17MuonAnalyzer::clearVectors() {
   muon_is_good_.clear();
   muon_global_.clear();
   muon_tracker_.clear();
-  isloosemuon_.clear();
-  ismediummuon_.clear();
+  DiMuonM_.clear();
+  muon_tight1_.clear();
+  muon_tight2_.clear();
+  cMuon_.clear();
+  //isloosemuon_.clear();
+  //ismediummuon_.clear();
   //istightmuon_.clear();
   ptGlob_.clear();
   etaGlob_.clear(); 
