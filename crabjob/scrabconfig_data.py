@@ -11,7 +11,7 @@ config.JobType.psetName = 'HEP17_cfg.py'
 
 config.Data.inputDataset = '/DYToMuMu_M-20_13TeV_pythia8/RunIISummer17DRPremix-92X_upgrade2017_realistic_v10-v2/GEN-SIM-RECO'#change the name of the dataset
 config.Data.inputDBS = 'global'
-Data.lumiMask = 'dataJSON/Cert_294927-302654_13TeV_PromptReco_Collisions17_JSON.txt'
+config.Data.lumiMask = 'dataJSON/Cert_294927-302654_13TeV_PromptReco_Collisions17_JSON.txt'
 config.Data.splitting = 'LumiBased'
 config.Data.unitsPerJob = 10
 config.Data.outLFNDirBase = '/store/group/dpg_hcal/comm_hcal/nlu' #change user name
