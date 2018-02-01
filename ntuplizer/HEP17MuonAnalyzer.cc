@@ -381,8 +381,8 @@ void HEP17MuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup&
           bool muon_2 = muon::isMediumMuon(*RecMuon);
           bool muon_3 = (RecMuon->pfIsolationR04().sumChargedHadronPt + std::max(0.,RecMuon->pfIsolationR04().sumNeutralHadronEt + RecMuon->pfIsolationR04().sumPhotonEt - (0.5 *RecMuon->pfIsolationR04().sumPUPt))) / RecMuon->pt()<0.15;
 
-          //if (ieta< 30 && ieta>15 && iphi>62 && iphi<67 && muon_1 && muon_2 && muon_3){
-          if (ieta< 30 && ieta>15 && muon_1 && muon_2 && muon_3){
+          if (ieta< 30 && ieta>15 && iphi>62 && iphi<67 && muon_1 && muon_2 && muon_3){
+          //if (ieta< 30 && ieta>15 && muon_1 && muon_2 && muon_3){
           //if (ieta< 28 && ieta>19 && iphi>62 && iphi<67){
               accept = true;
               int tight1 = 0;
