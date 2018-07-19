@@ -71,10 +71,11 @@ int main(int argc, char**argv){
                                 cout <<"idepth="<<d<<endl;
                                 fprintf(sFile,"//depth %d \n",d);
                                 TString ecal5x5_bincut = "";
-                                if(iecal5x5_bin==1) ecal5x5_bincut = "&& ecal5x5<0.55";
-                                else if(iecal5x5_bin==2) ecal5x5_bincut = "&& ecal5x5>0.55 && ecal5x5<1.1";
-                                else if(iecal5x5_bin==3) ecal5x5_bincut = "&& ecal5x5>1.1 && ecal5x5<2.7";
-                                else if(iecal5x5_bin==4) ecal5x5_bincut = "&& ecal5x5>2.7";
+                                if(iecal5x5_bin==1) ecal5x5_bincut = "&& ecal5x5==0";
+                                else if(iecal5x5_bin==2) ecal5x5_bincut = "&& ecal5x5>0 && ecal5x5<0.55";
+                                else if(iecal5x5_bin==3) ecal5x5_bincut = "&& ecal5x5>0.55 && ecal5x5<1.1";
+                                else if(iecal5x5_bin==4) ecal5x5_bincut = "&& ecal5x5>1.1 && ecal5x5<2.7";
+                                else if(iecal5x5_bin==5) ecal5x5_bincut = "&& ecal5x5>2.7";
 
                                 //if(k==18 && d>5) continue;
                                 //else if(k==17 && (d<2 || d>3)) continue;
@@ -89,7 +90,7 @@ int main(int argc, char**argv){
                                 fprintf (pFile, "ieta = %d, idep = %d \n", k, d);
                                 cout <<"ieta, idepth: "<<Nieta<<" "<<Nidep<<endl;
 
-                                TString cuttree("e"+Nidep+" < 10.0 && e"+Nidep+" > 0. && Trkmatch && HCal_ieta=="+Nieta+" && ecal5x5>0 "+ecal5x5_bincut);
+                                TString cuttree("e"+Nidep+" < 10.0 && e"+Nidep+" > 0. && Trkmatch && HCal_ieta=="+Nieta+ecal5x5_bincut);
                                 fprintf (pFile, "cut: %s \n",cuttree.Data());
                                 cout <<cuttree<<endl;
 
