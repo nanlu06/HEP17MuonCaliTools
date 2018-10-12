@@ -25,6 +25,12 @@ int main(int argc, char**argv){
         int depth = Ndepth.Atoi();
         float Emax = StrMax6.Atof();
         float Emin = StrMin6.Atof();
+
+        float Emax6 = StrMax6.Atof();
+        float Emin6 = StrMin6.Atof();
+        float Emax7 = StrMax7.Atof();
+        float Emin7 = StrMin7.Atof();
+
         if(depth==7){
            Emax = StrMax7.Atof();
            Emin = StrMin7.Atof();
@@ -45,27 +51,27 @@ int main(int argc, char**argv){
 
         TTree *outtree = new TTree("outtree", "Info");
 
-        float pos_mean = -999.;
-        float pos_errhigh = -999.;
-        float pos_errlow = -999.;
-        float sigfrac = -999.;
-        float bkgcoef = -999.;
-        float norm = -999.;
+        double pos_mean = -999.;
+        double pos_errhigh = -999.;
+        double pos_errlow = -999.;
+        double sigfrac = -999.;
+        double bkgcoef = -999.;
+        double norm = -999.;
         outtree->Branch("ieta", &ieta, "ieta/I");
         outtree->Branch("depth", &depth, "depth/I");
-        outtree->Branch("pos_mean", &pos_mean, "pos_mean/F");
-        outtree->Branch("pos_errhigh", &pos_errhigh, "pos_errhigh/F");
-        outtree->Branch("pos_errlow", &pos_errlow, "pos_errlow/F");
-        outtree->Branch("sigfrac", &sigfrac, "sigfrac/F");
-        outtree->Branch("bkgcoef", &bkgcoef, "bkgcoef/F");
-        outtree->Branch("norm", &norm, "norm/F");
+        outtree->Branch("pos_mean", &pos_mean, "pos_mean/D");
+        outtree->Branch("pos_errhigh", &pos_errhigh, "pos_errhigh/D");
+        outtree->Branch("pos_errlow", &pos_errlow, "pos_errlow/D");
+        outtree->Branch("sigfrac", &sigfrac, "sigfrac/D");
+        outtree->Branch("bkgcoef", &bkgcoef, "bkgcoef/D");
+        outtree->Branch("norm", &norm, "norm/D");
 
         // Declare observable x
         RooRealVar* evWeight = new RooRealVar("weight","weight",1,-10,10) ;
         RooRealVar* HCAL_energy = new RooRealVar("e"+Ndepth+"_o","e"+Ndepth+"_o",0.4,Emin,Emax) ;
-        RooRealVar* HCAL_energy_e6 = new RooRealVar("e6_o","e6_o",0.4,Emin,Emax) ;
-        RooRealVar* HCAL_energy_e7 = new RooRealVar("e7_o","e7_o",0.4,Emin,Emax) ;
-        RooRealVar* Z_mass = new RooRealVar("Z_mass","Z_mass",91,0,500) ;
+        RooRealVar* HCAL_energy_e6 = new RooRealVar("e6_o","e6_o",0.4,Emin6,Emax6) ;
+        RooRealVar* HCAL_energy_e7 = new RooRealVar("e7_o","e7_o",0.4,Emin7,Emax7) ;
+        RooRealVar* Z_mass = new RooRealVar("Z_mass","Z_mass",91,0,1000) ;
         //Gaussian
         RooRealVar* mean = new RooRealVar("mean","mean of gaussian",0) ;
         RooRealVar* sigma = new RooRealVar("Gaussian #sigma","width of gaussian",0.11,0.05,2) ;
@@ -80,7 +86,9 @@ int main(int argc, char**argv){
 
         RooAbsPdf* sigPdf = new RooFFTConvPdf("sigPdf","landau (X) gauss signal",*HCAL_energy,*landauSig,*gausSig) ;
         RooRealVar* bkgfrac = new RooRealVar("bkgfrac","fraction of background",0.1,0.0,1.0) ;
-        RooAbsPdf* model = new RooAddPdf("model","signal + bkg",RooArgList(*bkgPdf,*sigPdf),*bkgfrac) ;
+        RooAbsPdf* sigbkg = new RooAddPdf("sigbkg","signal + bkg",RooArgList(*bkgPdf,*sigPdf),*bkgfrac) ;
+        RooRealVar* nevents = new RooRealVar("nevents","number of fitted events",500,0,100000) ;
+        RooExtendPdf* model = new RooExtendPdf("model","extended signal p.d.f",*sigbkg,*nevents,"sigRange") ;
 
         RooArgSet obsAndWeight;
         obsAndWeight.add(*HCAL_energy);
@@ -109,8 +117,9 @@ int main(int argc, char**argv){
         pos_errlow = -ml->getErrorLo();
         if(pos_errlow==0) pos_errlow = pos_errhigh;
         if(pos_errhigh==0) pos_errhigh = pos_errlow;
-        sigfrac = 1-bkgfrac->getVal();
+        sigfrac = 1.-bkgfrac->getVal();
         bkgcoef = a0->getVal();
+        norm = nevents->getVal();
         outtree->Fill();
 
         RooBinning tbins(Emin,Emax);
