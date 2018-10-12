@@ -9,18 +9,26 @@ using namespace std ;
 
 int main(int argc, char**argv){
 
-        std::cout << "[Usage]: ./sig_plus_bkg_fit signalFile outputName ieta depth energyCut ZmassCut \n" << std::endl;
+        std::cout << "[Usage]: ./sig_plus_bkg_fit signalFile outputName ieta depth ZmassCut min_depth6 max_depth6 min_depth7 max_depth7 \n" << std::endl;
 
         TString signalfile=argv[1];
         TString outputName=argv[2];
         TString Nieta=argv[3];
         TString Ndepth=argv[4];
-        TString energyCut=argv[5];
-        TString ZmassCut=argv[6]; 
+        TString ZmassCut=argv[5];
+        TString StrMin6=argv[6];
+        TString StrMax6=argv[7]; 
+        TString StrMin7=argv[8];
+        TString StrMax7=argv[9];
 
-        int Emax = 2;       
-        TString StrEmax;
-        StrEmax.Form("%d",Emax);
+        int ieta = Nieta.Atoi();
+        int depth = Ndepth.Atoi();
+        float Emax = StrMax6.Atof();
+        float Emin = StrMin6.Atof();
+        if(depth==7){
+           Emax = StrMax7.Atof();
+           Emin = StrMin7.Atof();
+        }
 
         CommonFunc::setTDRStyle();
         int W = 800;
@@ -37,8 +45,6 @@ int main(int argc, char**argv){
 
         TTree *outtree = new TTree("outtree", "Info");
 
-        int ieta = Nieta.Atoi();
-        int depth = Ndepth.Atoi();
         float pos_mean = -999.;
         float pos_errhigh = -999.;
         float pos_errlow = -999.;
@@ -56,17 +62,17 @@ int main(int argc, char**argv){
 
         // Declare observable x
         RooRealVar* evWeight = new RooRealVar("weight","weight",1,-10,10) ;
-        RooRealVar* HCAL_energy = new RooRealVar("e"+Ndepth+"_o","e"+Ndepth+"_o",0.4,0,Emax) ;
-        RooRealVar* HCAL_energy_e6 = new RooRealVar("e6_o","e6_o",0.4,0,Emax) ;
-        RooRealVar* HCAL_energy_e7 = new RooRealVar("e7_o","e7_o",0.4,0,Emax) ;
+        RooRealVar* HCAL_energy = new RooRealVar("e"+Ndepth+"_o","e"+Ndepth+"_o",0.4,Emin,Emax) ;
+        RooRealVar* HCAL_energy_e6 = new RooRealVar("e6_o","e6_o",0.4,Emin,Emax) ;
+        RooRealVar* HCAL_energy_e7 = new RooRealVar("e7_o","e7_o",0.4,Emin,Emax) ;
         RooRealVar* Z_mass = new RooRealVar("Z_mass","Z_mass",91,0,500) ;
         //Gaussian
         RooRealVar* mean = new RooRealVar("mean","mean of gaussian",0) ;
-        RooRealVar* sigma = new RooRealVar("Gaussian standard deviation","width of gaussian",0.1,0.001,2) ;
+        RooRealVar* sigma = new RooRealVar("Gaussian #sigma","width of gaussian",0.11,0.05,2) ;
         RooAbsPdf* gausSig = new RooGaussian("gausSig","gausSig",*HCAL_energy,*mean,*sigma) ;  
         //Landau
-        RooRealVar* ml = new RooRealVar("Landau location paramter","mean landau",0.5,0.1,2) ;
-        RooRealVar* sl = new RooRealVar("Landau scale parameter","sigma landau",0.15, 0.01,2) ;
+        RooRealVar* ml = new RooRealVar("Landau location","mean landau",0.588,0.1,2) ;
+        RooRealVar* sl = new RooRealVar("Landau scale","sigma landau",0.097,0.01,2) ;
         RooAbsPdf* landauSig = new RooLandau("lx","lx",*HCAL_energy,*ml,*sl) ; 
         //bkg
         RooRealVar* a0 = new RooRealVar("a0","a0",-3,-100,0.) ;
@@ -84,8 +90,9 @@ int main(int argc, char**argv){
         obsAndWeight.add(*evWeight);
 
         cout <<"before dataset"<<endl;
-        TString cuttree = "Z_mass > "+ZmassCut+" && e"+Ndepth+"_o < "+ energyCut;
+        TString cuttree = " Z_mass > "+ZmassCut+" && e6_o < " + StrMax6 + " && e6_o > " + StrMin6+ " && e7_o < " + StrMax7 + " && e7_o > " + StrMin7;
         cout <<"selection cuts: "<<cuttree<<endl;
+
         RooDataSet* data = new RooDataSet("ggfmc","ggfmc",RooArgSet(obsAndWeight),RooFit::WeightVar(*evWeight),Import(*sigTree),Cut(cuttree)) ;
         data->Print() ;
         cout <<"after dataset"<<endl;
@@ -106,19 +113,19 @@ int main(int argc, char**argv){
         bkgcoef = a0->getVal();
         outtree->Fill();
 
-        RooBinning tbins(0,Emax);
-        tbins.addUniform(40,0,Emax) ;
-        RooPlot* dtframe = HCAL_energy->frame(Range(0,Emax,kTRUE),Title("energy in ieta "+ Nieta  + " idepth "+Ndepth));
+        RooBinning tbins(Emin,Emax);
+        tbins.addUniform(40,Emin,Emax) ;
+        RooPlot* dtframe = HCAL_energy->frame(Range(Emin,Emax,kTRUE),Title("energy in ieta "+ Nieta  + " idepth "+Ndepth));
         data->plotOn(dtframe,Binning(tbins));
         model->plotOn(dtframe);
         model->plotOn(dtframe, Components(*bkgPdf), LineStyle(kDashed));
         model->plotOn(dtframe, Components(*sigPdf), LineColor(kRed));
-        model->paramOn(dtframe,Layout(0.43, 0.93, 0.88), Format("NEU",AutoPrecision(0))) ;
-        data->statOn(dtframe,Layout(0.43,0.93,0.7), Format("NEU",AutoPrecision(0))) ;
+        model->paramOn(dtframe,Layout(0.60, 0.95, 0.90), Format("NEU",AutoPrecision(0))) ;
+        data->statOn(dtframe,Layout(0.65,0.95,0.6), Format("NEU",AutoPrecision(0))) ;
         dtframe->getAttText("model_paramBox")->SetTextColor(kBlack);
         dtframe->getAttFill("model_paramBox")->SetFillStyle(0);
         //dtframe->getAttText("sig_paramBox")->SetLineWidth(0);
-        dtframe->getAttText("model_paramBox")->SetTextSize(0.035);
+        dtframe->getAttText("model_paramBox")->SetTextSize(0.032);
 
         TCanvas *c1 = new TCanvas("c1","Muon energy spectrum in HCAL",200,10,700,500);
         c1->SetFillColor(0);
